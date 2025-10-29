@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Timeline - Cuộc sống hàng ngày</title>
+  <style>
+    :root{font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;}
+    body{margin:0;padding:24px;background:#f7f7f8;color:#111}
+    .container{max-width:900px;margin:0 auto}
+    h1{font-size:20px;margin:0 0 12px}
+    .card{background:#fff;border-radius:12px;padding:18px;box-shadow:0 6px 18px rgba(20,20,40,0.06)}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:10px;border-bottom:1px solid #eef0f3;text-align:left}
+    th{background:#fafafa}
+    td[contenteditable]{min-width:120px}
+    .controls{display:flex;gap:8px;margin-top:12px}
+    button{background:#0b74de;color:white;border:none;padding:8px 12px;border-radius:8px;cursor:pointer}
+    button.secondary{background:#6b7280}
+    .note{margin-top:12px;color:#555;font-size:13px}
+    @media (max-width:600px){th,td{font-size:13px;padding:8px}}
+  </style>
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Timeline — Cuộc sống hàng ngày (Full tuần)</h1>
+    <div class="card">
+      <table id="timeline-table">
+        <thead>
+          <tr>
+            <th>Thứ</th>
+            <th>Ngày</th>
+            <th>Giờ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Thứ Hai</td>
+            <td contenteditable id="date-mon"></td>
+            <td contenteditable></td>
+          </tr>
+          <tr>
+            <td>Thứ Ba</td>
+            <td contenteditable id="date-tue"></td>
+            <td contenteditable></td>
+          </tr>
+          <tr>
+            <td>Thứ Tư</td>
+            <td contenteditable id="date-wed"></td>
+            <td contenteditable></td>
+          </tr>
+          <tr>
+            <td>Thứ Năm</td>
+            <td contenteditable id="date-thu"></td>
+            <td contenteditable></td>
+          </tr>
+          <tr>
+            <td>Thứ Sáu</td>
+            <td contenteditable id="date-fri"></td>
+            <td contenteditable></td>
+          </tr>
+          <tr>
+            <td>Thứ Bảy</td>
+            <td contenteditable id="date-sat"></td>
+            <td contenteditable></td>
+          </tr>
+          <tr>
+            <td>Chủ Nhật</td>
+            <td contenteditable id="date-sun"></td>
+            <td contenteditable></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="controls">
+        <button id="fill-dates">Tự động điền ngày (tuần này)</button>
+        <button id="download-xlsx">Tải Excel (.xlsx)</button>
+        <button id="reset" class="secondary">Xóa nội dung ô</button>
+      </div>
+
+      <div class="note">Ghi chú: Click vào ô "Ngày" hoặc "Giờ" để chỉnh. Sau khi chỉnh bạn có thể tải file Excel.</div>
+    </div>
+  </div>
+
+  <script>
+    // Hàm format ngày dd/mm/yyyy
+    function fmt(d){
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const yy = d.getFullYear();
+      return dd + '/' + mm + '/' + yy;
+    }
+
+    document.getElementById('fill-dates').addEventListener('click', ()=>{
+      const today = new Date();
+      // Tìm thứ Hai của tuần hiện tại
+      const day = today.getDay(); // 0 Chủ Nhật .. 6 Thứ Bảy
+      const diffToMon = (day === 0) ? -6 : (1 - day);
+      const mon = new Date(today.getFullYear(), today.getMonth(), today.getDate() + diffToMon);
+      const ids = ['date-mon','date-tue','date-wed','date-thu','date-fri','date-sat','date-sun'];
+      for(let i=0;i<7;i++){
+        const d = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate()+i);
+        const el = document.getElementById(ids[i]);
+        if(el) el.textContent = fmt(d);
+      }
+    });
+
+    document.getElementById('reset').addEventListener('click', ()=>{
+      document.querySelectorAll('#timeline-table tbody td[contenteditable]').forEach(td=>td.textContent='');
+    });
+
+    document.getElementById('download-xlsx').addEventListener('click', ()=>{
+      // Build array of arrays (rows)
+      const rows = [];
+      const headers = Array.from(document.querySelectorAll('#timeline-table thead th')).map(t=>t.textContent.trim());
+      rows.push(headers);
+      document.querySelectorAll('#timeline-table tbody tr').forEach(tr=>{
+        const cells = Array.from(tr.querySelectorAll('td')).map(td=>td.textContent.trim());
+        rows.push(cells);
+      });
+
+      // Convert to sheet and workbook
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Timeline');
+
+      // Export
+      XLSX.writeFile(wb, 'Timeline_Cuoc_Song_Hang_Tuan.xlsx');
+    });
+  </script>
+</body>
+</html>
